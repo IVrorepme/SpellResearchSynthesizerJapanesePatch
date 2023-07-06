@@ -176,6 +176,8 @@ namespace SpellResearchSynthesizer
             if (spell.School == null) throw new Exception("Spell has no school!");
             if (spell.CastingType == null) throw new Exception("Spell has no casting type!");
             string strbuilder = "";
+
+            strbuilder += $"{spellVisualConfig.LocalizedSpellTier[spell.Tier.Name.ToLower()]} の ";
             if (s.UseFontColor)
             {
                 strbuilder += $"<font color='{(archetypemap.Archetypes[spell.School.Name.ToLower()].Color ?? "#000000")}'>";
@@ -185,7 +187,7 @@ namespace SpellResearchSynthesizer
             {
                 strbuilder += "</font><font color='#000000'>";
             }
-            strbuilder += $"の {spellVisualConfig.LocalizedSpellTier[spell.Tier.Name.ToLower()]} であり、";
+            strbuilder += $" であり、";
 
             switch (spell.CastingType.Name.ToLower())
             {
