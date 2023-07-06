@@ -244,7 +244,7 @@ namespace SpellResearchSynthesizer
                 int idx = 0;
                 foreach (Archetype e in spell.Elements)
                 {
-                    if (idx > 0 && idx == spell.Elements.Count - 1)
+                    if (idx > 0)
                         strbuilder += " 、 ";
                     if (s.UseFontColor)
                     {
@@ -274,7 +274,7 @@ namespace SpellResearchSynthesizer
                 int idx = 0;
                 foreach (Archetype t in spell.Techniques)
                 {
-                    if (idx > 0 && idx == spell.Techniques.Count - 1)
+                    if (idx > 0)
                         strbuilder += " 、 ";
                     if (s.UseFontColor)
                     {
