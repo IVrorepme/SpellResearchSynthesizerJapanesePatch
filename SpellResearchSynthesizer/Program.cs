@@ -170,12 +170,142 @@ namespace SpellResearchSynthesizer
             return strbuilder;
         }
 
+        private static string ProcessTextForJapanese(SpellInfo spell, ArchetypeVisualInfo archetypemap, LevelSettings s, SpellVisualInfo spellVisualConfig)
+        {
+            if (spell.Tier == null) throw new Exception("Spell has no tier!");
+            if (spell.School == null) throw new Exception("Spell has no school!");
+            if (spell.CastingType == null) throw new Exception("Spell has no casting type!");
+            string strbuilder = "";
+            if (s.UseFontColor)
+            {
+                strbuilder += $"<font color='{(archetypemap.Archetypes[spell.School.Name.ToLower()].Color ?? "#000000")}'>";
+            }
+            strbuilder += spellVisualConfig.LocalizedSpellSchool[spell.School.Name.ToLower()];
+            if (s.UseFontColor)
+            {
+                strbuilder += "</font><font color='#000000'>";
+            }
+            strbuilder += $"の {spellVisualConfig.LocalizedSpellTier[spell.Tier.Name.ToLower()]} であり、";
+
+            switch (spell.CastingType.Name.ToLower())
+            {
+                case "concentration":
+                    {
+                        strbuilder += "集中して唱え続ける必要がある。 ";
+                        break;
+                    }
+                case "fireandforget":
+                    {
+                        strbuilder += "詠唱後、解放時に発動する。 ";
+                        break;
+                    }
+                default:
+                    break;
+            }
+
+            foreach (Archetype target in spell.Targeting)
+            {
+                switch (target.Name.ToLower())
+                {
+                    case "actor":
+                        {
+
+                            strbuilder += "この呪文は狙った場所に放たれ、着地点に効果を及ぼす。 ";
+                            break;
+                        }
+                    case "area":
+                        {
+                            strbuilder += "この呪文は範囲効果を持つ。 ";
+                            break;
+                        }
+                    case "location":
+                        {
+                            strbuilder += "この呪文は指定した場所に効果を及ぼす。 ";
+                            break;
+                        }
+                    case "self":
+                        {
+                            strbuilder += "この呪文は自分自身に効果を及ぼす。 ";
+                            break;
+                        }
+                    default: break;
+                }
+            }
+
+            strbuilder += "<br><br>";
+
+            if (spell.Elements.Count > 0)
+            {
+                strbuilder += "次の要素で構成される ： ";
+                if (s.UseFontColor)
+                {
+                    strbuilder += "</font>";
+                }
+                int idx = 0;
+                foreach (Archetype e in spell.Elements)
+                {
+                    if (idx > 0 && idx == spell.Elements.Count - 1)
+                        strbuilder += " 、 ";
+                    if (s.UseFontColor)
+                    {
+                        strbuilder += $"<font color='{archetypemap.Archetypes[e.Name.ToLower()]?.Color ?? "#000000"}'>";
+                    }
+                    strbuilder += archetypemap.Archetypes[e.Name.ToLower()]?.LocalizeName;
+                    if (s.UseFontColor)
+                    {
+                        strbuilder += "</font>";
+                    }
+                    idx += 1;
+                }
+                strbuilder += "<br><br>";
+            }
+
+            if (spell.Techniques.Count > 0)
+            {
+                if (spell.Elements.Count > 0 && s.UseFontColor)
+                {
+                    strbuilder += "<font color='#000000'>";
+                }
+                strbuilder += $"次の技法を活用する ： ";
+                if (s.UseFontColor)
+                {
+                    strbuilder += "</font>";
+                }
+                int idx = 0;
+                foreach (Archetype t in spell.Techniques)
+                {
+                    if (idx > 0 && idx == spell.Techniques.Count - 1)
+                        strbuilder += " 、 ";
+                    if (s.UseFontColor)
+                    {
+                        strbuilder += $"<font color='{archetypemap.Archetypes[t.Name.ToLower()]?.Color ?? "#000000"}'>";
+                    }
+                    strbuilder += archetypemap.Archetypes[t.Name.ToLower()]?.LocalizeName;
+                    if (s.UseFontColor)
+                    {
+                        strbuilder += "</font>";
+                    }
+                    idx += 1;
+                }
+                strbuilder += "<br>";
+            }
+
+            return strbuilder;
+        }
+
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
             string extraSettingsPath = Path.Combine(state.ExtraSettingsDataPath ?? throw new Exception("Extra settings data path missing"), "config.json");
+            Console.WriteLine($"extraSettingsPath = {extraSettingsPath}");
             if (!File.Exists(extraSettingsPath)) throw new ArgumentException($"Archetype display settings missing! {extraSettingsPath}");
             string configText = File.ReadAllText(extraSettingsPath);
             ArchetypeVisualInfo archConfig = LoadArchetypeVisualInfo(configText);
+            SpellVisualInfo spellVisualConfig = LoadSpellVisualInfo(configText);
+
+            Console.WriteLine("\n\n\n\n\n\n\n\n");
+            Console.WriteLine($"{spellVisualConfig.LocalizedSpellTier.ToString()}");
+            Console.WriteLine("\n\n\n\n\n\n\n\n");
+
             JToken? researchDataLists = LoadResearchDataLists(configText);
             if (researchDataLists == null)
             {
@@ -291,7 +421,7 @@ namespace SpellResearchSynthesizer
             string path = state.DataFolderPath + @"\SKSE\Plugins\SpellResearchSynthesizer";
             Directory.CreateDirectory(path);
             File.WriteAllText(path + @"\SynthesizedPatch.json", JsonConvert.SerializeObject(jsonOutput, Formatting.Indented));
-            ProcessSpells(state, cleanedOutput, archConfig);
+            ProcessSpells(state, cleanedOutput, archConfig, spellVisualConfig);
             if (settings.Value.RemoveStartingSpells)
             {
                 Console.WriteLine("Removing starting spells...");
@@ -462,6 +592,12 @@ namespace SpellResearchSynthesizer
             return archconfig;
         }
 
+        private static SpellVisualInfo LoadSpellVisualInfo(string configText)
+        {
+            SpellVisualInfo tierconfig = SpellVisualInfo.From(configText);
+            return tierconfig;
+        }
+
         private static JToken? LoadResearchDataLists(string configText)
         {
             return JObject.Parse(configText)["researchDataLists"];
@@ -591,7 +727,7 @@ namespace SpellResearchSynthesizer
             return result;
         }
 
-        private static void ProcessSpells(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, SpellConfiguration spellInfo, ArchetypeVisualInfo archConfig)
+        private static void ProcessSpells(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, SpellConfiguration spellInfo, ArchetypeVisualInfo archConfig, SpellVisualInfo spellVisualConfig)
         {
             if (spellInfo == null)
             {
@@ -657,7 +793,7 @@ namespace SpellResearchSynthesizer
                         {
                             continue;
                         }
-                        string desc = ProcessText(spell, archConfig, s).Trim();
+                        string desc = settings.Value.JapanesePatch ? ProcessTextForJapanese(spell, archConfig, s, spellVisualConfig) : ProcessText(spell, archConfig, s).Trim();
 
                         string? font = s.Font;
                         Regex rnamefix = new("^.+\\s+(Tome)\\:?(?<tomename>.+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);

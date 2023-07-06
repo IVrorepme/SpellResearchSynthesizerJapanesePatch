@@ -17,6 +17,7 @@ namespace SpellResearchSynthesizer.Classes
             ArchetypeVisualInfo config = new();
             JObject data = JObject.Parse(configText);
             if (data == null) return config;
+            // Set Colors
             JToken? colors = data["Colors"];
             if (colors == null) return config;
             foreach (JProperty archColor in colors)
@@ -34,6 +35,7 @@ namespace SpellResearchSynthesizer.Classes
                 }
                 config.Archetypes[archColor.Name.ToLower()].Color = archColor.Value.ToString();
             }
+            // set Images
             JToken? images = data["Images"];
             if (images == null) return config;
             foreach (JProperty archImage in images)
@@ -53,6 +55,30 @@ namespace SpellResearchSynthesizer.Classes
                 }
                 config.Archetypes[archImage.Name.ToLower()].Image = archImage.Value.ToString();
             }
+            // set Localize Names
+            JToken? localizeArchTypes = data["LocalizeArchType"];
+            if (localizeArchTypes == null) return config;
+            foreach (JProperty localizeArchName in localizeArchTypes)
+            {
+                if (!config.Archetypes.ContainsKey(localizeArchName.Name.ToLower()))
+                {
+                    Console.WriteLine($"Archetype {localizeArchName.Name} found in image list but not in color & image list!");
+                    config.Archetypes[localizeArchName.Name.ToLower()] = new ArchetypeDisplayParameters
+                    {
+                        Name = localizeArchName.Name,
+                        Color = "#000000",
+                        Image = null
+                    };
+                }
+
+                if (config.Archetypes[localizeArchName.Name.ToLower()].Image != null)
+                {
+                    Console.WriteLine($"Duplicate LocalizeArchType entry for archetype {localizeArchName.Name}!");
+                }
+
+                config.Archetypes[localizeArchName.Name.ToLower()].LocalizeName = localizeArchName.Value.ToString();
+            }
+
             return config;
         }
     }

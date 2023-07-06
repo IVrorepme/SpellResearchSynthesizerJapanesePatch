@@ -4,6 +4,7 @@ namespace SpellResearchSynthesizer
 {
     public class Settings
     {
+        public bool JapanesePatch = true;
         public LevelSettings Novice = new();
         public LevelSettings Apprentice = new();
         public LevelSettings Adept = new();

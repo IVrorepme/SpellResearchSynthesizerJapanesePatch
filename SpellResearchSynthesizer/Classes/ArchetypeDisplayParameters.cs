@@ -6,6 +6,6 @@ namespace SpellResearchSynthesizer.Classes
         public string? Name { get => _Name; set => _Name = value?.ToLower(); }
         public string? Color { get; set; }
         public string? Image { get; set; }
-
+        public string? LocalizeName {get; set;}
     }
 }
